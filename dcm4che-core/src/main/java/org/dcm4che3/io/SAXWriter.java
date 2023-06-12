@@ -40,16 +40,7 @@ package org.dcm4che3.io;
 
 import java.io.IOException;
 
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.BulkData;
-import org.dcm4che3.data.ElementDictionary;
-import org.dcm4che3.data.Fragments;
-import org.dcm4che3.data.PersonName;
-import org.dcm4che3.data.Sequence;
-import org.dcm4che3.data.SpecificCharacterSet;
-import org.dcm4che3.data.VR;
-import org.dcm4che3.data.Value;
+import org.dcm4che3.data.*;
 import org.dcm4che3.util.Base64;
 import org.dcm4che3.util.ByteUtils;
 import org.dcm4che3.util.TagUtils;
@@ -65,7 +56,8 @@ public class SAXWriter implements DicomInputHandler {
     private static final String NAMESPACE = "http://dicom.nema.org/PS3.19/models/NativeDICOM";
     private static final int BASE64_CHUNK_LENGTH = 256 * 3;
     private static final int BUFFER_LENGTH = 256 * 4;
-    
+    private final PersonNameBase.PersonNameFactory personName;
+
     private boolean includeKeyword = true;
     private String namespace = "";
 
@@ -74,7 +66,12 @@ public class SAXWriter implements DicomInputHandler {
     private final char[] buffer = new char[BUFFER_LENGTH];
 
     public SAXWriter(ContentHandler ch) {
+        this(ch, PersonName::new);
+    }
+
+    public SAXWriter(ContentHandler ch, PersonNameBase.PersonNameFactory personNameFactory) {
         this.ch = ch;
+        this.personName = personNameFactory;
     }
 
     public final boolean isIncludeKeyword() {
@@ -333,7 +330,7 @@ public class SAXWriter implements DicomInputHandler {
             String s = vr.toString(val, bigEndian, i, null);
             addAttribute("number", Integer.toString(i + 1));
             if (vr == VR.PN) {
-                PersonName pn = new PersonName(s, true);
+                PersonNameBase pn = personName.create(s, true);
                 startElement("PersonName");
                 writePNGroup("Alphabetic", pn, PersonName.Group.Alphabetic);
                 writePNGroup("Ideographic", pn, PersonName.Group.Ideographic);
@@ -386,7 +383,7 @@ public class SAXWriter implements DicomInputHandler {
         }
     }
 
-    private void writePNGroup(String qname, PersonName pn,
+    private void writePNGroup(String qname, PersonNameBase pn,
             PersonName.Group group) throws SAXException {
         if (pn.contains(group)) {
             startElement(qname); 

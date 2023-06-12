@@ -40,7 +40,6 @@ package org.dcm4che3.json;
 
 import org.dcm4che3.data.*;
 import org.dcm4che3.data.PersonName.Group;
-import org.dcm4che3.io.BulkDataCreator;
 import org.dcm4che3.util.Base64;
 import org.dcm4che3.util.TagUtils;
 import org.slf4j.Logger;
@@ -55,8 +54,6 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
 /**

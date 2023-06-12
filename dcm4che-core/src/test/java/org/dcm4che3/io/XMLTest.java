@@ -54,12 +54,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.BulkData;
-import org.dcm4che3.data.Fragments;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
-import org.dcm4che3.data.VR;
+import org.dcm4che3.data.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.xml.sax.InputSource;
@@ -72,12 +67,13 @@ import org.xml.sax.SAXException;
  */
 public class XMLTest {
 
-    private static final String REFERENCE_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><NativeDicomModel xml:space=\"preserve\"><DicomAttribute keyword=\"SpecificCharacterSet\" tag=\"00080005\" vr=\"CS\"><Value number=\"1\">ISO 2022 IR 87</Value></DicomAttribute><DicomAttribute keyword=\"ImageType\" tag=\"00080008\" vr=\"CS\"><Value number=\"1\">DERIVED</Value><Value number=\"2\"/><Value number=\"3\">PRIMARY</Value><Value number=\"4\"/><Value number=\"5\">TEST</Value></DicomAttribute><DicomAttribute keyword=\"AccessionNumber\" tag=\"00080050\" vr=\"SH\"/><DicomAttribute keyword=\"SourceImageSequence\" tag=\"00082112\" vr=\"SQ\"><Item number=\"1\"><DicomAttribute keyword=\"ReferencedSOPClassUID\" tag=\"00081150\" vr=\"UI\"><Value number=\"1\">1.2.840.10008.5.1.4.1.1.2</Value></DicomAttribute><DicomAttribute keyword=\"ReferencedSOPInstanceUID\" tag=\"00081155\" vr=\"UI\"><Value number=\"1\">1.2.3.4</Value></DicomAttribute></Item></DicomAttribute><DicomAttribute tag=\"00090002\" privateCreator=\"PRIVATE\" vr=\"OB\"><InlineBinary>AAE=</InlineBinary></DicomAttribute><DicomAttribute keyword=\"PatientName\" tag=\"00100010\" vr=\"PN\"><PersonName number=\"1\"><Alphabetic><FamilyName>af</FamilyName><GivenName>ag</GivenName></Alphabetic><Ideographic><FamilyName>if</FamilyName><GivenName>ig</GivenName></Ideographic><Phonetic><FamilyName>pf</FamilyName><GivenName>pg</GivenName></Phonetic></PersonName></DicomAttribute><DicomAttribute keyword=\"FrameTime\" tag=\"00181063\" vr=\"DS\"><Value number=\"1\">33</Value></DicomAttribute><DicomAttribute keyword=\"SamplesPerPixel\" tag=\"00280002\" vr=\"US\"><Value number=\"1\">1</Value></DicomAttribute><DicomAttribute keyword=\"NumberOfFrames\" tag=\"00280008\" vr=\"IS\"><Value number=\"1\">1</Value></DicomAttribute><DicomAttribute keyword=\"FrameIncrementPointer\" tag=\"00280009\" vr=\"AT\"><Value number=\"1\">00181063</Value></DicomAttribute><DicomAttribute keyword=\"OverlayData\" tag=\"60003000\" vr=\"OW\"><BulkData uuid=\"someuuid\"/></DicomAttribute><DicomAttribute keyword=\"PixelData\" tag=\"7FE00010\" vr=\"OB\"><DataFragment number=\"2\"><BulkData uri=\"file:/PixelData?offset=1234&amp;length=5678\"/></DataFragment></DicomAttribute></NativeDicomModel>";
+    private static final String REFERENCE_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><NativeDicomModel xml:space=\"preserve\"><DicomAttribute keyword=\"SpecificCharacterSet\" tag=\"00080005\" vr=\"CS\"><Value number=\"1\">ISO 2022 IR 87</Value></DicomAttribute><DicomAttribute keyword=\"ImageType\" tag=\"00080008\" vr=\"CS\"><Value number=\"1\">DERIVED</Value><Value number=\"2\"/><Value number=\"3\">PRIMARY</Value><Value number=\"4\"/><Value number=\"5\">TEST</Value></DicomAttribute><DicomAttribute keyword=\"AccessionNumber\" tag=\"00080050\" vr=\"SH\"/><DicomAttribute keyword=\"SourceImageSequence\" tag=\"00082112\" vr=\"SQ\"><Item number=\"1\"><DicomAttribute keyword=\"ReferencedSOPClassUID\" tag=\"00081150\" vr=\"UI\"><Value number=\"1\">1.2.840.10008.5.1.4.1.1.2</Value></DicomAttribute><DicomAttribute keyword=\"ReferencedSOPInstanceUID\" tag=\"00081155\" vr=\"UI\"><Value number=\"1\">1.2.3.4</Value></DicomAttribute></Item></DicomAttribute><DicomAttribute tag=\"00090002\" privateCreator=\"PRIVATE\" vr=\"OB\"><InlineBinary>AAE=</InlineBinary></DicomAttribute><DicomAttribute keyword=\"PatientName\" tag=\"00100010\" vr=\"PN\"><PersonName number=\"1\"><Alphabetic><FamilyName>af</FamilyName><GivenName>ag</GivenName><MiddleName/><NamePrefix/></Alphabetic><Ideographic><FamilyName>if</FamilyName><GivenName>ig</GivenName><MiddleName/><NamePrefix/></Ideographic><Phonetic><FamilyName>pf</FamilyName><GivenName>pg</GivenName><MiddleName/><NamePrefix/></Phonetic></PersonName></DicomAttribute><DicomAttribute keyword=\"FrameTime\" tag=\"00181063\" vr=\"DS\"><Value number=\"1\">33</Value></DicomAttribute><DicomAttribute keyword=\"SamplesPerPixel\" tag=\"00280002\" vr=\"US\"><Value number=\"1\">1</Value></DicomAttribute><DicomAttribute keyword=\"NumberOfFrames\" tag=\"00280008\" vr=\"IS\"><Value number=\"1\">1</Value></DicomAttribute><DicomAttribute keyword=\"FrameIncrementPointer\" tag=\"00280009\" vr=\"AT\"><Value number=\"1\">00181063</Value></DicomAttribute><DicomAttribute keyword=\"OverlayData\" tag=\"60003000\" vr=\"OW\"><BulkData uuid=\"someuuid\"/></DicomAttribute><DicomAttribute keyword=\"PixelData\" tag=\"7FE00010\" vr=\"OB\"><DataFragment number=\"2\"><BulkData uri=\"file:/PixelData?offset=1234&amp;length=5678\"/></DataFragment></DicomAttribute></NativeDicomModel>";
     
     @Test
     public void testDcm2Xml() throws Exception {
         Attributes dataset = createTestDataset();
-        
+        dataset.setPersonNameFactory(PersonNamePreserve::new);
+
         String xml = dcm2xml(dataset);
 
         Assert.assertEquals(REFERENCE_XML, xml);
@@ -93,7 +89,7 @@ public class XMLTest {
         //handler.getTransformer().setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
         handler.setResult(new StreamResult(xmlOutput));
 
-        SAXWriter writer = new SAXWriter(handler);
+        SAXWriter writer = new SAXWriter(handler, PersonNamePreserve::new);
         writer.write(dataset);
 
         return xmlOutput.toString(StandardCharsets.UTF_8.name());
@@ -108,7 +104,7 @@ public class XMLTest {
         dataset.newSequence(Tag.SourceImageSequence, 1).add(item);
         item.setString(Tag.ReferencedSOPClassUID, VR.UI, UID.CTImageStorage);
         item.setString(Tag.ReferencedSOPInstanceUID, VR.UI, "1.2.3.4");
-        dataset.setString(Tag.PatientName, VR.PN, "af^ag=if^ig=pf^pg");
+        dataset.setString(Tag.PatientName, VR.PN, "af^ag^^=if^ig^^=pf^pg^^");
         dataset.setBytes("PRIVATE", 0x00090002, VR.OB, new byte[] { 0, 1 });
         dataset.setDouble(Tag.FrameTime, VR.DS, 33.0);
         dataset.setInt(Tag.SamplesPerPixel, VR.US, 1);
@@ -125,8 +121,10 @@ public class XMLTest {
     @Test
     public void testXml2Dcm() throws Exception {
         Attributes dataset = xml2dcm(REFERENCE_XML);
+//        dataset.setPersonNameFactory(PersonNamePreserve::new);
 
         Attributes referenceDataset = createTestDataset();
+        referenceDataset.setPersonNameFactory(PersonNamePreserve::new);
         // the null value will be an empty string after converting to XML, therefore we have to adapt the reference
         referenceDataset.setString(Tag.ImageType, VR.CS, "DERIVED", "", "PRIMARY", "", "TEST");
 

@@ -38,13 +38,6 @@
 
 package org.dcm4che3.data;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.util.*;
-import java.util.regex.Pattern;
-
 import org.dcm4che3.data.IOD.DataElement;
 import org.dcm4che3.data.IOD.DataElementType;
 import org.dcm4che3.io.DicomEncodingOptions;
@@ -54,10 +47,21 @@ import org.dcm4che3.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.*;
+import java.util.regex.Pattern;
+
 /**
  * @author Gunter Zeilinger (gunterze@protonmail.com)
  */
 public class Attributes implements Serializable {
+
+    public void setPersonNameFactory(PersonNameBase.PersonNameFactory factory) {
+        personName = factory;
+    }
 
     public interface Visitor {
         boolean visit(Attributes attrs, int tag, VR vr, Object value)
@@ -106,6 +110,7 @@ public class Attributes implements Serializable {
     private transient int length = -1;
     private transient int[] groupLengths;
     private transient int groupLengthIndex0;
+    private transient PersonNameBase.PersonNameFactory personName = PersonName::new;
 
     private volatile boolean bigEndian;
     private long itemPosition = -1;
@@ -2858,11 +2863,11 @@ public class Attributes implements Serializable {
                 : equalPNValues((String) v1, (String) v2);
     }
 
-    private static boolean containsPNValue(Object v) {
-        return v != Value.NULL && !new PersonName((String) v, true).isEmpty();
+    private boolean containsPNValue(Object v) {
+        return v != Value.NULL && !personName.create((String) v, true).isEmpty();
     }
 
-    private static boolean equalPNValues(String[] v1, String[] v2) {
+    private boolean equalPNValues(String[] v1, String[] v2) {
         if (v1.length != v2.length)
             return false;
 
@@ -2873,8 +2878,8 @@ public class Attributes implements Serializable {
         return true;
     }
 
-    private static boolean equalPNValues(String v1, String v2) {
-        return new PersonName(v1, true).equals(new PersonName(v2, true));
+    private boolean equalPNValues(String v1, String v2) {
+        return personName.create(v1, true).equals(personName.create(v2, true));
     }
 
     @Override
@@ -3327,7 +3332,7 @@ public class Attributes implements Serializable {
             DateRange dateRange = null;
             switch (vr) {
                 case PN:
-                    keyVal = new PersonName(keyVals[0]).toString();
+                    keyVal = personName.create(keyVals[0], false).toString();
                     break;
                 case DA:
                 case DT:
@@ -3345,7 +3350,7 @@ public class Attributes implements Serializable {
                         else
                             continue;
                     if (vr == VR.PN)
-                        val = new PersonName(val).toString();
+                        val = personName.create(val, false).toString();
                     if (pattern.matcher(val).matches())
                         return true;
                 }
@@ -3363,7 +3368,7 @@ public class Attributes implements Serializable {
                         else
                             continue;
                     if (vr == VR.PN)
-                        val = new PersonName(val).toString();
+                        val = personName.create(val, false).toString();
                     if (ignoreCase ? keyVal.equalsIgnoreCase(val)
                                    : keyVal.equals(val))
                         return true;
