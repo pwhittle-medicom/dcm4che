@@ -121,7 +121,7 @@ public class XMLTest {
     @Test
     public void testXml2Dcm() throws Exception {
         Attributes dataset = xml2dcm(REFERENCE_XML);
-//        dataset.setPersonNameFactory(PersonNamePreserve::new);
+        dataset.setPersonNameFactory(PersonNamePreserve::new);
 
         Attributes referenceDataset = createTestDataset();
         referenceDataset.setPersonNameFactory(PersonNamePreserve::new);

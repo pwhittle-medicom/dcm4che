@@ -76,7 +76,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  * @author Vrinda Nayak <vrinda.nayak@j4care.com>
- *
  */
 public class FindSCU {
 
@@ -97,7 +96,7 @@ public class FindSCU {
         InformationModel(String cuid, String level) {
             this.cuid = cuid;
             this.level = level;
-       }
+        }
 
         public void adjustQueryOptions(EnumSet<QueryOption> queryOptions) {
             if (level == null) {
@@ -108,7 +107,7 @@ public class FindSCU {
     }
 
     private static ResourceBundle rb =
-        ResourceBundle.getBundle("org.dcm4che3.tool.findscu.messages");
+            ResourceBundle.getBundle("org.dcm4che3.tool.findscu.messages");
     private static SAXTransformerFactory saxtf;
 
     private final Device device = new Device("findscu");
@@ -148,16 +147,16 @@ public class FindSCU {
     }
 
     public final void setInformationModel(InformationModel model, String[] tss,
-            EnumSet<QueryOption> queryOptions) {
-       this.model = model;
-       rq.addPresentationContext(new PresentationContext(1, model.cuid, tss));
-       if (!queryOptions.isEmpty()) {
-           model.adjustQueryOptions(queryOptions);
-           rq.addExtendedNegotiation(new ExtendedNegotiation(model.cuid, 
-                   QueryOption.toExtendedNegotiationInformation(queryOptions)));
-       }
-       if (model.level != null)
-           addLevel(model.level);
+                                          EnumSet<QueryOption> queryOptions) {
+        this.model = model;
+        rq.addPresentationContext(new PresentationContext(1, model.cuid, tss));
+        if (!queryOptions.isEmpty()) {
+            model.adjustQueryOptions(queryOptions);
+            rq.addExtendedNegotiation(new ExtendedNegotiation(model.cuid,
+                    QueryOption.toExtendedNegotiationInformation(queryOptions)));
+        }
+        if (model.level != null)
+            addLevel(model.level);
     }
 
     public void addLevel(String s) {
@@ -207,21 +206,21 @@ public class FindSCU {
     }
 
     private static CommandLine parseComandLine(String[] args)
-                throws ParseException {
-            Options opts = new Options();
-            addServiceClassOptions(opts);
-            addKeyOptions(opts);
-            addOutputOptions(opts);
-            addQueryLevelOption(opts);
-            addCancelOption(opts);
-            CLIUtils.addConnectOption(opts);
-            CLIUtils.addBindClientOption(opts, "FINDSCU");
-            CLIUtils.addAEOptions(opts);
-            CLIUtils.addSendTimeoutOption(opts);
-            CLIUtils.addResponseTimeoutOption(opts);
-            CLIUtils.addPriorityOption(opts);
-            CLIUtils.addCommonOptions(opts);
-            return CLIUtils.parseComandLine(args, opts, rb, FindSCU.class);
+            throws ParseException {
+        Options opts = new Options();
+        addServiceClassOptions(opts);
+        addKeyOptions(opts);
+        addOutputOptions(opts);
+        addQueryLevelOption(opts);
+        addCancelOption(opts);
+        CLIUtils.addConnectOption(opts);
+        CLIUtils.addBindClientOption(opts, "FINDSCU");
+        CLIUtils.addAEOptions(opts);
+        CLIUtils.addSendTimeoutOption(opts);
+        CLIUtils.addResponseTimeoutOption(opts);
+        CLIUtils.addPriorityOption(opts);
+        CLIUtils.addCommonOptions(opts);
+        return CLIUtils.parseComandLine(args, opts, rb, FindSCU.class);
     }
 
     @SuppressWarnings("static-access")
@@ -245,7 +244,7 @@ public class FindSCU {
                 .argName("PATIENT|STUDY|SERIES|IMAGE")
                 .desc(rb.getString("level"))
                 .build());
-   }
+    }
 
     @SuppressWarnings("static-access")
     private static void addCancelOption(Options opts) {
@@ -259,6 +258,7 @@ public class FindSCU {
 
     @SuppressWarnings("static-access")
     private static void addKeyOptions(Options opts) {
+        opts.addOption(null, "keep-pn-comp", false, rb.getString("keep-pn-comp"));
         opts.addOption(Option.builder("m")
                 .hasArgs()
                 .argName("[seq.]attr=value")
@@ -302,7 +302,7 @@ public class FindSCU {
         opts.addOption(null, "xmlns", false, rb.getString("xmlns"));
         opts.addOption(null, "out-cat", false, rb.getString("out-cat"));
     }
-    
+
     public ApplicationEntity getApplicationEntity() {
         return ae;
     }
@@ -310,19 +310,19 @@ public class FindSCU {
     public Connection getRemoteConnection() {
         return remote;
     }
-    
+
     public AAssociateRQ getAAssociateRQ() {
         return rq;
     }
-    
+
     public Association getAssociation() {
         return as;
     }
 
     public Device getDevice() {
         return device;
-    }    
-    
+    }
+
     public Attributes getKeys() {
         return keys;
     }
@@ -361,7 +361,7 @@ public class FindSCU {
                 executorService.shutdown();
                 scheduledExecutorService.shutdown();
             }
-       } catch (ParseException e) {
+        } catch (ParseException e) {
             System.err.println("findscu: " + e.getMessage());
             System.err.println(rb.getString("try"));
             System.exit(2);
@@ -406,6 +406,8 @@ public class FindSCU {
     }
 
     private static void configureKeys(FindSCU main, CommandLine cl) {
+        if (cl.hasOption("keep-pn-comp"))
+            main.keys.setPersonNameFactory(PersonNamePreserve::new);
         CLIUtils.addEmptyAttributes(main.keys, cl.getOptionValues("r"));
         CLIUtils.addAttributes(main.keys, cl.getOptionValues("m"));
         if (cl.hasOption("L"))
@@ -415,7 +417,7 @@ public class FindSCU {
     }
 
     private static void configureServiceClass(FindSCU main, CommandLine cl) throws ParseException {
-        main.setInformationModel(informationModelOf(cl), 
+        main.setInformationModel(informationModelOf(cl),
                 CLIUtils.transferSyntaxesOf(cl), queryOptionsOf(main, cl));
     }
 
@@ -424,7 +426,7 @@ public class FindSCU {
             return cl.hasOption("M")
                     ? InformationModel.valueOf(cl.getOptionValue("M"))
                     : InformationModel.StudyRoot;
-        } catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             throw new ParseException(
                     MessageFormat.format(
                             rb.getString("invalid-model-name"),
@@ -449,7 +451,7 @@ public class FindSCU {
     public void query(File f) throws Exception {
         Attributes attrs;
         String filePath = f.getPath();
-        String fileExt = filePath.substring(filePath.lastIndexOf(".")+1).toLowerCase();
+        String fileExt = filePath.substring(filePath.lastIndexOf(".") + 1).toLowerCase();
         DicomInputStream dis = null;
         try {
             attrs = fileExt.equals("xml")
@@ -497,19 +499,22 @@ public class FindSCU {
         attrs.addAll(keys);
     }
 
-    public void query() throws IOException, InterruptedException {
-        query(keys);
+    interface AssociationCFindHandler {
+        void query(Attributes keys, DimseRSPHandlerFactory rspHandlerFactory) throws IOException, InterruptedException;
     }
-   
-    private void query(Attributes keys) throws IOException, InterruptedException {
-         DimseRSPHandler rspHandler = new DimseRSPHandler(as.nextMessageID()) {
 
+    interface DimseRSPHandlerFactory {
+        DimseRSPHandler create();
+    }
+
+    private DimseRSPHandler rspHandlerFactory() {
+        return new DimseRSPHandler(as.nextMessageID()) {
             int cancelAfter = FindSCU.this.cancelAfter;
             int numMatches;
 
             @Override
             public void onDimseRSP(Association as, Attributes cmd,
-                    Attributes data) {
+                                   Attributes data) {
                 super.onDimseRSP(as, cmd, data);
                 int status = cmd.getInt(Tag.Status, -1);
                 if (Status.isPending(status)) {
@@ -525,21 +530,35 @@ public class FindSCU {
                 }
             }
         };
-
-        query(keys, rspHandler);
     }
 
-    public void query( DimseRSPHandler rspHandler) throws IOException, InterruptedException {
-        query(keys, rspHandler);
+    public void query() throws IOException, InterruptedException {
+        query(keys);
     }
-    
-    private void query(Attributes keys, DimseRSPHandler rspHandler) throws IOException, InterruptedException {
-        as.cfind(model.cuid, priority, keys, null, rspHandler);
+
+    public void query(AssociationCFindHandler cFindHandler) throws IOException, InterruptedException {
+        query(keys, cFindHandler);
     }
-    
+
+    private void query(Attributes keys) throws IOException, InterruptedException {
+        query(keys, this::rspHandlerFactory);
+    }
+
+    private void query(Attributes keys, AssociationCFindHandler cFindHandler) throws IOException, InterruptedException {
+        cFindHandler.query(keys, this::rspHandlerFactory);
+    }
+
+    public void query(DimseRSPHandler rspHandler) throws IOException, InterruptedException {
+        query(keys, () -> rspHandler);
+    }
+
+    private void query(Attributes keys, DimseRSPHandlerFactory rspHandlerFactory) throws IOException, InterruptedException {
+        as.cfind(model.cuid, priority, keys, null, rspHandlerFactory.create());
+    }
+
     private void onResult(Attributes data) {
         int numMatches = totNumMatches.incrementAndGet();
-        if (outDir == null) 
+        if (outDir == null)
             return;
 
         try {
@@ -551,7 +570,7 @@ public class FindSCU {
             if (xml) {
                 writeAsXML(data, out);
             } else {
-                DicomOutputStream dos = 
+                DicomOutputStream dos =
                         new DicomOutputStream(out, UID.ImplicitVRLittleEndian);
                 dos.writeDataset(null, data);
             }
@@ -589,13 +608,13 @@ public class FindSCU {
         SAXTransformerFactory tf = saxtf;
         if (tf == null)
             saxtf = tf = (SAXTransformerFactory) TransformerFactory
-                .newInstance();
+                    .newInstance();
         if (xsltFile == null)
             return tf.newTransformerHandler();
 
         Templates tpls = xsltTpls;
-        if (tpls == null);
-            xsltTpls = tpls = tf.newTemplates(new StreamSource(xsltFile));
+        if (tpls == null) ;
+        xsltTpls = tpls = tf.newTemplates(new StreamSource(xsltFile));
 
         return tf.newTransformerHandler(tpls);
     }

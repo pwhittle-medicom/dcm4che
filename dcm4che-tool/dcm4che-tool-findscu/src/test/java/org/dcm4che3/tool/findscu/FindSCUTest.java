@@ -38,12 +38,12 @@
 
 package org.dcm4che3.tool.findscu;
 
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.VR;
+import org.dcm4che3.data.*;
+import org.dcm4che3.tool.common.CLIUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
@@ -55,6 +55,27 @@ public class FindSCUTest {
         Attributes attrs = withSSA(returnKeys());
         FindSCU.mergeKeys(attrs, withSSA(matchingKeys()));
         assertEquals(mergedKeys(), attrs.getNestedDataset(Tag.ScheduledStepAttributesSequence));
+    }
+
+    @Test
+    public void preservePersonalNameComponents() throws Exception {
+        FindSCU main = new FindSCU();
+        main.query((keys, dimseRSPHandlerFactory) -> {
+            keys.setPersonNameFactory(PersonNamePreserve::new);
+            CLIUtils.addAttributes(keys, new String[]{
+                    "PatientName=Doe^John^^",
+                    "ModalitiesInStudy=CT",
+                    "StudyDate=20110510-",
+            });
+
+            Attributes reference = new Attributes();
+            reference.setPersonNameFactory(PersonNamePreserve::new);
+            reference.setString(Tag.PatientName, VR.PN, "Doe^John^^");
+            reference.setString(Tag.ModalitiesInStudy, VR.CS, "CT");
+            reference.setString(Tag.StudyDate, VR.DA, "20110510-");
+
+            Assert.assertEquals(reference, keys);
+        });
     }
 
     private Attributes matchingKeys() {

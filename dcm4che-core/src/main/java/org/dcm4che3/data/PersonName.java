@@ -57,10 +57,6 @@ public class PersonName extends PersonNameBase {
         // does nothing (drops empty components)
     }
 
-    public static PersonNameBase factory(String s, boolean lenient) {
-        return new PersonName(s, lenient);
-    }
-
     public enum Component {
         FamilyName, GivenName, MiddleName, NamePrefix, NameSuffix
     }

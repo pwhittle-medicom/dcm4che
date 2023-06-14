@@ -2836,11 +2836,11 @@ public class Attributes implements Serializable {
             return (v1 instanceof String[])
                     ? (v2 instanceof String[])
                             && (vr == VR.PN
-                                ? equalPNValues((String[]) v1, (String[]) v2)
+                                ? equalPNValues((String[]) v1, (String[]) v2, other)
                                 : Arrays.equals((String[]) v1, (String[]) v2))
                     : !(v2 instanceof String[])
                             && (vr == VR.PN
-                                    ? equalPNValues(v1, v2)
+                                    ? equalPNValues(v1, v2, other)
                                     : v1.equals(v2));
         }
 
@@ -2857,29 +2857,29 @@ public class Attributes implements Serializable {
         return false;
     }
 
-    private boolean equalPNValues(Object v1, Object v2) {
+    private boolean equalPNValues(Object v1, Object v2, Attributes other) {
         return v1 == Value.NULL ? !containsPNValue(v2)
                 : v2 == Value.NULL ? !containsPNValue(v1)
-                : equalPNValues((String) v1, (String) v2);
+                : equalPNValues((String) v1, (String) v2, other);
     }
 
     private boolean containsPNValue(Object v) {
         return v != Value.NULL && !personName.create((String) v, true).isEmpty();
     }
 
-    private boolean equalPNValues(String[] v1, String[] v2) {
+    private boolean equalPNValues(String[] v1, String[] v2, Attributes other) {
         if (v1.length != v2.length)
             return false;
 
         for (int i = 0; i < v1.length; i++)
-            if (!equalPNValues(v1[i], v2[i]))
+            if (!equalPNValues(v1[i], v2[i], other))
                 return false;
 
         return true;
     }
 
-    private boolean equalPNValues(String v1, String v2) {
-        return personName.create(v1, true).equals(personName.create(v2, true));
+    private boolean equalPNValues(String v1, String v2, Attributes other) {
+        return personName.create(v1, true).equals(other.personName.create(v2, true));
     }
 
     @Override
