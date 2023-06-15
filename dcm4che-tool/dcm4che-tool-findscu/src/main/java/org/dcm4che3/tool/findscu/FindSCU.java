@@ -53,7 +53,9 @@ import org.dcm4che3.net.pdu.ExtendedNegotiation;
 import org.dcm4che3.net.pdu.PresentationContext;
 import org.dcm4che3.tool.common.CLIUtils;
 import org.dcm4che3.util.SafeClose;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerFactory;
@@ -258,7 +260,9 @@ public class FindSCU {
 
     @SuppressWarnings("static-access")
     private static void addKeyOptions(Options opts) {
-        opts.addOption(null, "keep-pn-comp", false, rb.getString("keep-pn-comp"));
+        opts.addOption(Option.builder()
+                .argName("full-personname")
+                .build());
         opts.addOption(Option.builder("m")
                 .hasArgs()
                 .argName("[seq.]attr=value")
@@ -406,14 +410,18 @@ public class FindSCU {
     }
 
     private static void configureKeys(FindSCU main, CommandLine cl) {
-        if (cl.hasOption("keep-pn-comp"))
-            main.keys.setPersonNameFactory(PersonNamePreserve::new);
+        configurePersonNameOption(main, cl);
         CLIUtils.addEmptyAttributes(main.keys, cl.getOptionValues("r"));
         CLIUtils.addAttributes(main.keys, cl.getOptionValues("m"));
         if (cl.hasOption("L"))
             main.addLevel(cl.getOptionValue("L"));
         if (cl.hasOption("i"))
             main.setInputFilter(CLIUtils.toTags(cl.getOptionValues("i")));
+    }
+
+    public static void configurePersonNameOption(FindSCU main, CommandLine cl) {
+        if (cl.hasOption("full-personname"))
+            main.keys.setPersonNameFactory(PersonNamePreserve::new);
     }
 
     private static void configureServiceClass(FindSCU main, CommandLine cl) throws ParseException {
@@ -449,6 +457,16 @@ public class FindSCU {
     }
 
     public void query(File f) throws Exception {
+        Attributes attrs = readAttributes(f);
+        query(attrs, this::rspHandlerFactory);
+    }
+
+    public void query(File f, AssociationCFindHandler cFindHandler) throws Exception {
+        Attributes attrs = readAttributes(f);
+        query(attrs, cFindHandler);
+    }
+
+    private Attributes readAttributes(File f) throws ParserConfigurationException, SAXException, IOException {
         Attributes attrs;
         String filePath = f.getPath();
         String fileExt = filePath.substring(filePath.lastIndexOf(".") + 1).toLowerCase();
@@ -464,8 +482,9 @@ public class FindSCU {
         } finally {
             SafeClose.close(dis);
         }
+        attrs.setPersonNameFactory(keys.getPersonNameFactory());
         mergeKeys(attrs, keys);
-        query(attrs);
+        return attrs;
     }
 
     private static class MergeNested implements Attributes.Visitor {

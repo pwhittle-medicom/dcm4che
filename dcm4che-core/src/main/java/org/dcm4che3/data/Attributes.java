@@ -63,6 +63,10 @@ public class Attributes implements Serializable {
         personName = factory;
     }
 
+    public PersonNameBase.PersonNameFactory getPersonNameFactory() {
+        return personName;
+    }
+
     public interface Visitor {
         boolean visit(Attributes attrs, int tag, VR vr, Object value)
                 throws Exception;

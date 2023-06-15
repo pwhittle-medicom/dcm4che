@@ -38,10 +38,25 @@
 
 package org.dcm4che3.tool.findscu;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 import org.dcm4che3.data.*;
+import org.dcm4che3.io.SAXWriter;
 import org.dcm4che3.tool.common.CLIUtils;
 import org.junit.Assert;
 import org.junit.Test;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 
@@ -59,23 +74,38 @@ public class FindSCUTest {
 
     @Test
     public void preservePersonalNameComponents() throws Exception {
+        Attributes reference = new Attributes();
+        reference.setPersonNameFactory(PersonNamePreserve::new);
+        reference.setString(Tag.PatientName, VR.PN, "Doe^John^^");
+        reference.setString(Tag.ModalitiesInStudy, VR.CS, "CT");
+        reference.setString(Tag.StudyDate, VR.DA, "20110510-");
+
+        CommandLine cl = new CommandLine.Builder().addOption(Option.builder()
+                        .longOpt("full-personname")
+                        .build())
+                .build();
         FindSCU main = new FindSCU();
-        main.query((keys, dimseRSPHandlerFactory) -> {
-            keys.setPersonNameFactory(PersonNamePreserve::new);
+        FindSCU.configurePersonNameOption(main, cl);
+        FindSCU.AssociationCFindHandler cFindHandler = (keys, dimseRSPHandlerFactory) -> {
             CLIUtils.addAttributes(keys, new String[]{
                     "PatientName=Doe^John^^",
                     "ModalitiesInStudy=CT",
                     "StudyDate=20110510-",
             });
 
-            Attributes reference = new Attributes();
-            reference.setPersonNameFactory(PersonNamePreserve::new);
-            reference.setString(Tag.PatientName, VR.PN, "Doe^John^^");
-            reference.setString(Tag.ModalitiesInStudy, VR.CS, "CT");
-            reference.setString(Tag.StudyDate, VR.DA, "20110510-");
+            assertEquals(reference, keys);
+        };
 
-            Assert.assertEquals(reference, keys);
-        });
+        main.query(cFindHandler);
+
+        SAXTransformerFactory tf = (SAXTransformerFactory) TransformerFactory.newInstance();
+        TransformerHandler handler = tf.newTransformerHandler();
+        File f = File.createTempFile("testquery", ".xml");
+        handler.setResult(new StreamResult(f));
+        SAXWriter writer = new SAXWriter(handler);
+        writer.write(reference);
+        main.query(f, cFindHandler);
+
     }
 
     private Attributes matchingKeys() {
@@ -86,7 +116,7 @@ public class FindSCUTest {
 
     private Attributes withSSA(Attributes item) {
         Attributes attrs = new Attributes(1);
-        attrs.newSequence(Tag.ScheduledStepAttributesSequence,1).add(item);
+        attrs.newSequence(Tag.ScheduledStepAttributesSequence, 1).add(item);
         return attrs;
     }
 
