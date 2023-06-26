@@ -261,7 +261,7 @@ public class FindSCU {
     @SuppressWarnings("static-access")
     private static void addKeyOptions(Options opts) {
         opts.addOption(Option.builder()
-                .argName("full-personname")
+                .longOpt("full-personname")
                 .build());
         opts.addOption(Option.builder("m")
                 .hasArgs()
